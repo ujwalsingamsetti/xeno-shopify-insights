@@ -7,6 +7,7 @@ const { sequelize } = require('./models');
 const authRoutes = require('./routes/auth');
 const shopifyRoutes = require('./routes/shopify');
 const insightsRoutes = require('./routes/insights');
+const dataRoutes = require('./routes/data');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/shopify', shopifyRoutes);
 app.use('/api/insights', insightsRoutes);
+app.use('/api/data', dataRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

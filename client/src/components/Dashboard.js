@@ -1,16 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { CustomerForm, ProductForm, OrderForm } from './DataForms';
+import SearchFilter from './SearchFilter';
+import ExportData from './ExportData';
+import LoadingSpinner from './LoadingSpinner';
+import { useToast } from './Toast';
 
 const Dashboard = ({ user, onLogout }) => {
   const [tenants, setTenants] = useState([]);
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [metrics, setMetrics] = useState({});
   const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
   const [topCustomers, setTopCustomers] = useState([]);
   const [revenueTrend, setRevenueTrend] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [showAddTenant, setShowAddTenant] = useState(false);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [showProductForm, setShowProductForm] = useState(false);
+  const [showOrderForm, setShowOrderForm] = useState(false);
   const [newTenant, setNewTenant] = useState({ name: '', shopifyDomain: '', shopifyAccessToken: '' });
+  const { showToast, ToastContainer } = useToast();
 
   const token = localStorage.getItem('token');
   const axiosConfig = { headers: { Authorization: `Bearer ${token}` } };
@@ -38,20 +51,29 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     try {
-      const [metricsRes, ordersRes, customersRes, trendRes] = await Promise.all([
+      const [metricsRes, ordersRes, customersRes, productsRes, topCustomersRes, trendRes] = await Promise.all([
         axios.get(`/api/insights/dashboard/${selectedTenant.id}`, axiosConfig),
         axios.get(`/api/insights/orders/${selectedTenant.id}`, axiosConfig),
+        axios.get(`/api/data/customers/${selectedTenant.id}`, axiosConfig),
+        axios.get(`/api/data/products/${selectedTenant.id}`, axiosConfig),
         axios.get(`/api/insights/top-customers/${selectedTenant.id}`, axiosConfig),
         axios.get(`/api/insights/revenue-trend/${selectedTenant.id}`, axiosConfig)
       ]);
 
       setMetrics(metricsRes.data);
       setOrders(ordersRes.data);
-      setTopCustomers(customersRes.data);
+      setAllOrders(ordersRes.data);
+      setCustomers(customersRes.data);
+      setProducts(productsRes.data);
+      setTopCustomers(topCustomersRes.data);
       setRevenueTrend(trendRes.data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      showToast('Error loading dashboard data', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,14 +90,79 @@ const Dashboard = ({ user, onLogout }) => {
   };
 
   const syncData = async () => {
+    setLoading(true);
     try {
       await axios.post(`/api/shopify/sync/${selectedTenant.id}`, {}, axiosConfig);
       fetchDashboardData();
-      alert('Data synced successfully!');
+      showToast('Data synced successfully!', 'success');
     } catch (error) {
       console.error('Error syncing data:', error);
-      alert('Sync failed');
+      showToast('Sync failed', 'error');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleAddCustomer = async (customerData) => {
+    try {
+      await axios.post(`/api/data/customers/${selectedTenant.id}`, customerData, axiosConfig);
+      fetchDashboardData();
+      showToast('Customer added successfully!', 'success');
+    } catch (error) {
+      showToast('Error adding customer', 'error');
+    }
+  };
+
+  const handleAddProduct = async (productData) => {
+    try {
+      await axios.post(`/api/data/products/${selectedTenant.id}`, productData, axiosConfig);
+      fetchDashboardData();
+      showToast('Product added successfully!', 'success');
+    } catch (error) {
+      showToast('Error adding product', 'error');
+    }
+  };
+
+  const handleAddOrder = async (orderData) => {
+    try {
+      await axios.post(`/api/data/orders/${selectedTenant.id}`, orderData, axiosConfig);
+      fetchDashboardData();
+      showToast('Order added successfully!', 'success');
+    } catch (error) {
+      showToast('Error adding order', 'error');
+    }
+  };
+
+  const handleSearch = (searchTerm) => {
+    if (!searchTerm) {
+      setOrders(allOrders);
+      return;
+    }
+    const filtered = allOrders.filter(order => 
+      order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.Customer?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.Customer?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.Customer?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setOrders(filtered);
+  };
+
+  const handleFilter = (filters) => {
+    let filtered = [...allOrders];
+    
+    if (filters.dateRange?.startDate && filters.dateRange?.endDate) {
+      filtered = filtered.filter(order => {
+        const orderDate = new Date(order.orderDate);
+        return orderDate >= new Date(filters.dateRange.startDate) && 
+               orderDate <= new Date(filters.dateRange.endDate);
+      });
+    }
+    
+    if (filters.status) {
+      filtered = filtered.filter(order => order.financialStatus === filters.status);
+    }
+    
+    setOrders(filtered);
   };
 
   return (
@@ -93,7 +180,14 @@ const Dashboard = ({ user, onLogout }) => {
             ))}
           </select>
           <button onClick={() => setShowAddTenant(true)}>Add Store</button>
-          {selectedTenant && <button onClick={syncData}>Sync Data</button>}
+          {selectedTenant && (
+            <>
+              <button onClick={() => setShowCustomerForm(true)}>Add Customer</button>
+              <button onClick={() => setShowProductForm(true)}>Add Product</button>
+              <button onClick={() => setShowOrderForm(true)}>Add Order</button>
+              <button onClick={syncData} disabled={loading}>Sync Data</button>
+            </>
+          )}
           <button onClick={onLogout}>Logout</button>
         </div>
       </header>
@@ -134,6 +228,7 @@ const Dashboard = ({ user, onLogout }) => {
 
       {selectedTenant && (
         <div className="dashboard-content">
+          {loading && <LoadingSpinner />}
           <div className="metrics-grid">
             <div className="metric-card">
               <h3>Total Customers</h3>
@@ -182,7 +277,18 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
 
           <div className="orders-table">
-            <h3>Recent Orders</h3>
+            <div className="table-header">
+              <h3>Recent Orders</h3>
+              <div className="table-actions">
+                <ExportData data={orders} filename="orders" type="csv" />
+                <ExportData data={orders} filename="orders" type="json" />
+              </div>
+            </div>
+            <SearchFilter 
+              onSearch={handleSearch}
+              onFilter={handleFilter}
+              placeholder="Search orders, customers..."
+            />
             <table>
               <thead>
                 <tr>
@@ -208,6 +314,30 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         </div>
       )}
+      
+      {showCustomerForm && (
+        <CustomerForm 
+          onSubmit={handleAddCustomer}
+          onClose={() => setShowCustomerForm(false)}
+        />
+      )}
+      
+      {showProductForm && (
+        <ProductForm 
+          onSubmit={handleAddProduct}
+          onClose={() => setShowProductForm(false)}
+        />
+      )}
+      
+      {showOrderForm && (
+        <OrderForm 
+          onSubmit={handleAddOrder}
+          onClose={() => setShowOrderForm(false)}
+          customers={customers}
+        />
+      )}
+      
+      <ToastContainer />
     </div>
   );
 };

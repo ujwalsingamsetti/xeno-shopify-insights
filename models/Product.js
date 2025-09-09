@@ -27,6 +27,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    inventory: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
     tenantId: {
       type: DataTypes.INTEGER,
       allowNull: false

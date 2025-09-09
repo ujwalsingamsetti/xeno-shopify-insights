@@ -23,6 +23,14 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    address: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
     totalSpent: {
       type: DataTypes.DECIMAL(10, 2),
       defaultValue: 0
