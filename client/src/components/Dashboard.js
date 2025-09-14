@@ -95,7 +95,7 @@ const Dashboard = ({ user, onLogout }) => {
     setLoading(true);
     try {
       await axios.post(`/api/shopify/sync/${selectedTenant.id}`, {}, axiosConfig);
-      fetchDashboardData();
+      await fetchDashboardData();
       showToast('Data synced successfully!', 'success');
     } catch (error) {
       console.error('Error syncing data:', error);

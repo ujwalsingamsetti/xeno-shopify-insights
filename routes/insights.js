@@ -29,7 +29,8 @@ router.get('/dashboard/:tenantId', auth, async (req, res) => {
       totalRevenue: parseFloat(totalRevenue)
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Dashboard metrics error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -55,12 +56,13 @@ router.get('/orders/:tenantId', auth, async (req, res) => {
     const orders = await Order.findAll({
       where: whereClause,
       order: [['orderDate', 'DESC']],
-      include: [{ model: Customer, attributes: ['firstName', 'lastName', 'email'] }]
+      include: [{ model: Customer, attributes: ['firstName', 'lastName', 'email'], required: false }]
     });
 
     res.json(orders);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Orders fetch error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -83,7 +85,8 @@ router.get('/top-customers/:tenantId', auth, async (req, res) => {
 
     res.json(topCustomers);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Top customers error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -123,7 +126,8 @@ router.get('/revenue-trend/:tenantId', auth, async (req, res) => {
 
     res.json(trendData);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Revenue trend error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
