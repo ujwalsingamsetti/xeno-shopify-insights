@@ -1,5 +1,6 @@
 const express = require('express');
 const { Customer, Product, Order, Tenant } = require('../models');
+const { Op } = require('sequelize');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -144,7 +145,6 @@ router.get('/products/:tenantId', auth, async (req, res) => {
 
 // Search functionality
 router.get('/search/:tenantId', auth, async (req, res) => {
-  const { Op } = require('sequelize');
   try {
     const { q, type } = req.query;
     const tenant = await Tenant.findOne({
