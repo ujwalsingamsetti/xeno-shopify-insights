@@ -59,8 +59,8 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Database sync and server start
-sequelize.sync().then(() => {
-  console.log('Database synced');
+sequelize.sync({ alter: true }).then(() => {
+  console.log('Database synced with schema updates');
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
