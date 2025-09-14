@@ -2,11 +2,12 @@ const express = require('express');
 const { Customer, Product, Order, Tenant } = require('../models');
 const { Op } = require('sequelize');
 const auth = require('../middleware/auth');
+const { validateCustomer, validateProduct, validateOrder } = require('../middleware/validation');
 
 const router = express.Router();
 
 // Add new customer
-router.post('/customers/:tenantId', auth, async (req, res) => {
+router.post('/customers/:tenantId', auth, validateCustomer, async (req, res) => {
   try {
     const { email, firstName, lastName, phone, address } = req.body;
     const tenant = await Tenant.findOne({
@@ -29,12 +30,13 @@ router.post('/customers/:tenantId', auth, async (req, res) => {
 
     res.json(customer);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating customer' });
+    console.error('Error creating customer:', error);
+    res.status(500).json({ message: 'Error creating customer', error: error.message });
   }
 });
 
 // Add new product
-router.post('/products/:tenantId', auth, async (req, res) => {
+router.post('/products/:tenantId', auth, validateProduct, async (req, res) => {
   try {
     const { title, price, vendor, productType, inventory } = req.body;
     const tenant = await Tenant.findOne({
@@ -57,12 +59,13 @@ router.post('/products/:tenantId', auth, async (req, res) => {
 
     res.json(product);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating product' });
+    console.error('Error creating product:', error);
+    res.status(500).json({ message: 'Error creating product', error: error.message });
   }
 });
 
 // Add new order
-router.post('/orders/:tenantId', auth, async (req, res) => {
+router.post('/orders/:tenantId', auth, validateOrder, async (req, res) => {
   try {
     const { customerId, totalPrice, orderDate, financialStatus } = req.body;
     const tenant = await Tenant.findOne({
@@ -95,7 +98,8 @@ router.post('/orders/:tenantId', auth, async (req, res) => {
 
     res.json(order);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating order' });
+    console.error('Error creating order:', error);
+    res.status(500).json({ message: 'Error creating order', error: error.message });
   }
 });
 
@@ -117,7 +121,8 @@ router.get('/customers/:tenantId', auth, async (req, res) => {
 
     res.json(customers);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching customers' });
+    console.error('Error fetching customers:', error);
+    res.status(500).json({ message: 'Error fetching customers', error: error.message });
   }
 });
 
@@ -139,7 +144,8 @@ router.get('/products/:tenantId', auth, async (req, res) => {
 
     res.json(products);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching products' });
+    console.error('Error fetching products:', error);
+    res.status(500).json({ message: 'Error fetching products', error: error.message });
   }
 });
 
@@ -183,7 +189,8 @@ router.get('/search/:tenantId', auth, async (req, res) => {
 
     res.json(results);
   } catch (error) {
-    res.status(500).json({ message: 'Search failed' });
+    console.error('Search failed:', error);
+    res.status(500).json({ message: 'Search failed', error: error.message });
   }
 });
 

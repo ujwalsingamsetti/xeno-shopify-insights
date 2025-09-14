@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 const CustomerForm = ({ onSubmit, onClose }) => {
   const [formData, setFormData] = useState({
@@ -12,6 +11,10 @@ const CustomerForm = ({ onSubmit, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.email || !formData.firstName || !formData.lastName) {
+      alert('Please fill in all required fields');
+      return;
+    }
     onSubmit(formData);
     onClose();
   };
@@ -75,6 +78,14 @@ const ProductForm = ({ onSubmit, onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.title || !formData.price) {
+      alert('Please fill in title and price');
+      return;
+    }
+    if (isNaN(formData.price) || parseFloat(formData.price) < 0) {
+      alert('Price must be a valid positive number');
+      return;
+    }
     onSubmit(formData);
     onClose();
   };
@@ -137,6 +148,14 @@ const OrderForm = ({ onSubmit, onClose, customers }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.customerId || !formData.totalPrice) {
+      alert('Please select customer and enter total price');
+      return;
+    }
+    if (isNaN(formData.totalPrice) || parseFloat(formData.totalPrice) < 0) {
+      alert('Total price must be a valid positive number');
+      return;
+    }
     onSubmit(formData);
     onClose();
   };

@@ -30,12 +30,14 @@ const Dashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     fetchTenants();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (selectedTenant) {
       fetchDashboardData();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTenant]);
 
   const fetchTenants = async () => {
